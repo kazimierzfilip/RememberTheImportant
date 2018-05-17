@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">Remember The Important</string>
+    <string name="welcome">Always remember THE IMPORTANT THING</string>
+    <string name="next_button">NEXT</string>
+    <string name="add_button">ADD</string>
+</resources>
