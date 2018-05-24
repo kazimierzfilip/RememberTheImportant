@@ -1,8 +1,10 @@
 package com.wordpress.javawrok.remembertheimportant;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -14,9 +16,11 @@ import android.widget.Toast;
 import org.w3c.dom.Text;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.InvalidClassException;
 import java.io.ObjectInputStream;
@@ -50,17 +54,38 @@ public class MainActivity extends AppCompatActivity {
         textList = new ArrayList<>();
         mTextView = findViewById(R.id.main_textView);
         mTextView.setText(R.string.welcome);
+        openQuotes();
+    }
 
-//        try {
-//            ObjectOutputStream out = new
-//                   ObjectOutputStream(openFileOutput(TEXT_FILE, MODE_PRIVATE));
-//            out.writeObject(textList);
-//            out.close();
-//            Toast. makeText (this,"Text Saved !",Toast. LENGTH_LONG ).show();
-//        } catch (java.io.IOException e) {
-//            Toast. makeText (this,"Sorry Text could't be added",Toast. LENGTH_LONG ).show();
-//        }
+    public void addQuote(MenuItem item){
+        Intent intent = new Intent(this,AddQuoteActivity.class);
+        startActivityForResult(intent,101);
+    }
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode==101 && resultCode==102 && data!=null){
+            String quote = data.getStringExtra("quote");
+            if(quote!=null && quote.compareTo("")!=0)
+                textList.add(quote);
+        } else if (requestCode==1000){
+            readFromFile(data.getData());
+        }
+    }
+
+    public void saveQuotes(){
+        try {
+            ObjectOutputStream out = new
+                   ObjectOutputStream(openFileOutput(TEXT_FILE, MODE_PRIVATE));
+            out.writeObject(textList);
+            out.close();
+            Toast. makeText (this,"Text Saved !",Toast. LENGTH_LONG ).show();
+        } catch (java.io.IOException e) {
+            Toast. makeText (this,"Sorry, problems during saving",Toast. LENGTH_LONG ).show();
+        }
+    }
+
+    public void openQuotes(){
         try {
             ObjectInputStream in = new ObjectInputStream(openFileInput(TEXT_FILE));
 
@@ -79,29 +104,23 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public void addQuote(MenuItem item){
-        Intent intent = new Intent(this,AddQuoteActivity.class);
-        startActivityForResult(intent,101);
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode==101 && resultCode==102 && data!=null){
-            String quote = data.getStringExtra("quote");
-            if(quote!=null && quote.compareTo("")!=0)
-                textList.add(quote);
-        }
-    }
-
-    public void readFromFile(String file){
+    public void readFromFile(Uri uri){
         try {
-            InputStreamReader in = new InputStreamReader(openFileInput(file));
-            BufferedReader bufIn = new BufferedReader(in);
+            InputStream input = getContentResolver().openInputStream(uri);
+            BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(input));
             String line;
-            while((line=bufIn.readLine())!=null){
-                textList.add(line);
+            StringBuilder buf = new StringBuilder();
+            while((line=reader.readLine())!=null){
+                Log.v("SEEEEEEEEEEEEE",line);
+                if(line.compareTo("")==0) {
+                    textList.add(buf.toString());
+                    buf=new StringBuilder();
+                } else {
+                    buf.append(line);
+                }
             }
-            bufIn.close();
+            reader.close();
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
@@ -109,11 +128,24 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public void next(MenuItem item){
+    public void openFromFile(MenuItem menuItem){
+        Intent getFileIntent = new Intent();
+        getFileIntent.setAction(Intent.ACTION_PICK);
+        startActivityForResult(getFileIntent,1000);
+//        readFromFile(file);
+    }
+
+    public void next(View view){
         if(pos>=textList.size()) {
             pos = 0;
         }
         mTextView.setText(textList.get(pos));
         pos+=1;
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        saveQuotes();
     }
 }
