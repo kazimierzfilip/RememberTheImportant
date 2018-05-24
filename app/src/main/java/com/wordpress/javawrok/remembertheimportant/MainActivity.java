@@ -33,6 +33,8 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity {
 
     public static final String TEXT_FILE = "texts.txt";
+    public static final int REQUEST_ADD_QUOTE = 101;
+    public static final int REQUEST_IMPORT_QUOTES = 1000;
     private TextView mTextView;
     private ArrayList<String> textList;
     private int pos;
@@ -59,17 +61,17 @@ public class MainActivity extends AppCompatActivity {
 
     public void addQuote(MenuItem item){
         Intent intent = new Intent(this,AddQuoteActivity.class);
-        startActivityForResult(intent,101);
+        startActivityForResult(intent,REQUEST_ADD_QUOTE);
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode==101 && resultCode==102 && data!=null){
+        if (requestCode==REQUEST_ADD_QUOTE && resultCode==RESULT_OK && data!=null){
             String quote = data.getStringExtra("quote");
             if(quote!=null && quote.compareTo("")!=0)
                 textList.add(quote);
-        } else if (requestCode==1000){
-            readFromFile(data.getData());
+        } else if (requestCode==REQUEST_IMPORT_QUOTES && resultCode==RESULT_OK && data!=null){
+            importFromUri(data.getData());
         }
     }
 
@@ -104,19 +106,22 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public void readFromFile(Uri uri){
+    public void importFromUri(Uri uri){
+
         try {
             InputStream input = getContentResolver().openInputStream(uri);
             BufferedReader reader = new BufferedReader(
                     new InputStreamReader(input));
             String line;
             StringBuilder buf = new StringBuilder();
+            boolean save=false;
             while((line=reader.readLine())!=null){
-                Log.v("SEEEEEEEEEEEEE",line);
-                if(line.compareTo("")==0) {
+                if(line.compareTo("")==0 && save) {
+                    save=false;
                     textList.add(buf.toString());
                     buf=new StringBuilder();
                 } else {
+                    save=true;
                     buf.append(line);
                 }
             }
@@ -126,21 +131,23 @@ public class MainActivity extends AppCompatActivity {
         } catch (IOException e) {
             e.printStackTrace();
         }
+
     }
 
-    public void openFromFile(MenuItem menuItem){
+    public void importFromFile(MenuItem menuItem){
         Intent getFileIntent = new Intent();
         getFileIntent.setAction(Intent.ACTION_PICK);
-        startActivityForResult(getFileIntent,1000);
-//        readFromFile(file);
+        startActivityForResult(getFileIntent,REQUEST_IMPORT_QUOTES);
     }
 
     public void next(View view){
-        if(pos>=textList.size()) {
-            pos = 0;
+        if(!textList.isEmpty()) {
+            if (pos >= textList.size()) {
+                pos = 0;
+            }
+            mTextView.setText(textList.get(pos));
+            pos += 1;
         }
-        mTextView.setText(textList.get(pos));
-        pos+=1;
     }
 
     @Override

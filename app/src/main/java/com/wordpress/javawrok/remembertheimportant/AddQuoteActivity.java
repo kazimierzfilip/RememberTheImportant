@@ -24,7 +24,7 @@ public class AddQuoteActivity extends AppCompatActivity {
         String quote = mEditText.getText().toString();
         Intent intentData = new Intent();
         intentData.putExtra("quote",quote);
-        setResult(102,intentData);
+        setResult(RESULT_OK,intentData);
         finish();
     }
 }
